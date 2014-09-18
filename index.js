@@ -36,27 +36,52 @@ function get(request, response) {
 };
 
 function post(request, response) {
-	// TODO: read 'name and email from the request.body'
-	// var newSessionId = login.login('xxx', 'xxx@gmail.com');
-	// TODO: set new session id to the 'session_id' cookie in the response
-	// replace "Logged In" response with response.end(login.hello(newSessionId));
 
-	response.end("Logged In\n");
+	//Read 'name and email from the request.body'
+	var obj = request.body;
+	var name = obj['name'];
+	var email = obj['email'];
+	var newSessionId = login.login(name, email);
+	//Set new session id to the 'session_id' cookie in the response
+	response.setHeader('Set-Cookie', 'session_id=' + newSessionId);
+	response.end(login.hello(newSessionId));
 };
 
 function del(request, response) {
 	console.log("DELETE:: Logout from the server");
- 	// TODO: remove session id via login.logout(xxx)
- 	// No need to set session id in the response cookies since you just logged out!
-
-  	response.end('Logged out from the server\n');
+ 	
+	var cookies = request.cookies;
+	if ('session_id' in cookies) {
+		var sid = cookies['session_id'];
+		if ( login.isLoggedIn(sid) ) {
+			login.logout(sid);
+			response.end('Logged out from the server\n');
+		}else{
+			response.end('User not logged in\n');
+		}
+	}
+		
 };
 
 function put(request, response) {
 	console.log("PUT:: Re-generate new seesion_id for the same user");
-	// TODO: refresh session id; similar to the post() function
-
-	response.end("Re-freshed session id\n");
+	var cookies = request.cookies;
+	//Refresh session id; similar to the post() function
+	if ('session_id' in cookies) {
+		var sid = cookies['session_id'];
+		if ( login.isLoggedIn(sid) ) {
+			var newSessionId = login.login( login.sessionMap[sid].name, login.sessionMap[sid].email);
+			//Set new session id to the 'session_id' cookie in the response
+			response.setHeader('Set-Cookie', 'session_id=' + newSessionId);
+			response.end("Re-freshed session id \n");
+		} else {
+			response.end("Invalid session_id! Please login again\n");
+		}
+	}else {
+		response.end("Could not refresh session id \n");
+	}
+	
+	
 };
 
 app.listen(8000);
